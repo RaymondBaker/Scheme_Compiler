@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Lexer.fs" />
+    <Compile Include="Ast.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>
