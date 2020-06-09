@@ -8,13 +8,7 @@ type EnvKey =
 | EnvSymbol of Symbol
 | EnvIdentifier of Identifier
 
-let formToDouble form =
-    match form with 
-    | ScNumber value ->
-        value
-    | _ ->
-        // ERROR
-        -69.0
+
 
 let rec evalAst (ast: ScForm list) (env: Map<EnvKey, (double -> double -> double)>) =
     match ast with 
@@ -27,12 +21,19 @@ let rec evalAst (ast: ScForm list) (env: Map<EnvKey, (double -> double -> double
         | ScSymbol sym ->
             //check if this finds something
             let func = env.TryFind(EnvSymbol(sym)).Value
-            let firstParam = (formToDouble rest.Head)
-            let secondParam = (formToDouble rest.Tail.Head)  
+            let firstParam = (evalParam rest.Head env)
+            let secondParam = (evalParam rest.Tail.Head env)  
             
             func firstParam secondParam
         | _ -> 
             0.0
+and evalParam form env =
+    match form with 
+    | ScNumber value ->
+        value
+    | ScList forms ->
+        evalAst forms env
+    | _ -> 0.0 //Error
 
 // Todo: make type for lambda otherwise can only deal with ints
 let env = 
@@ -48,7 +49,7 @@ let main argv =
     let testString = "void Void Test asdfasldfj 1 + 10.1 - 64"
     let lispProg1 = "(print (+ 5 3) (\"test\"))"
     let lispProg2 = "(+ 1 (* 4 5))"
-    let lispProg3 = "(+ 29 5)"
+    let lispProg3 = "(* 29 (- 4 5))"
     let tokenList = lexString lispProg3
     let ast = parseTokenList tokenList
     let eval = evalAst ast env
