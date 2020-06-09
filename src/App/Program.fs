@@ -10,7 +10,7 @@ type EnvKey =
 
 
 
-let rec evalAst (ast: ScForm list) (env: Map<EnvKey, (double -> double -> double)>) =
+let rec evalAst (ast: ScForm list) (env: Map<EnvKey, (double list -> double)>) =
     match ast with 
     | [] -> 0.0
     | form::rest -> 
@@ -21,13 +21,12 @@ let rec evalAst (ast: ScForm list) (env: Map<EnvKey, (double -> double -> double
         | ScSymbol sym ->
             //check if this finds something
             let func = env.TryFind(EnvSymbol(sym)).Value
-            let firstParam = (evalParam rest.Head env)
-            let secondParam = (evalParam rest.Tail.Head env)  
+            let funcParams = rest |> List.map (evalParam env)  
             
-            func firstParam secondParam
+            func funcParams
         | _ -> 
             0.0
-and evalParam form env =
+and evalParam env form =
     match form with 
     | ScNumber value ->
         value
@@ -38,10 +37,14 @@ and evalParam form env =
 // Todo: make type for lambda otherwise can only deal with ints
 let env = 
    Map.empty.
-      Add(EnvSymbol(MulSym), (fun a b -> a * b)).
-      Add(EnvSymbol(DivSym), (fun a b -> a / b)).
-      Add(EnvSymbol(PlusSym), (fun a b -> a + b)).
-      Add(EnvSymbol(MinusSym), (fun a b -> a - b))
+      Add(EnvSymbol(MulSym), (fun (argList: double list) -> 
+                                argList.Tail |> List.fold ( * ) argList.Head)).
+      Add(EnvSymbol(DivSym), (fun (argList: double list) -> 
+                                argList.Tail |> List.fold ( / ) argList.Head)).
+      Add(EnvSymbol(PlusSym), (fun (argList: double list) -> 
+                                argList |> List.sum)).
+      Add(EnvSymbol(MinusSym), (fun (argList: double list) -> 
+                                argList.Tail |> List.fold ( - ) argList.Head))
 
 
 [<EntryPoint>]
@@ -49,7 +52,7 @@ let main argv =
     let testString = "void Void Test asdfasldfj 1 + 10.1 - 64"
     let lispProg1 = "(print (+ 5 3) (\"test\"))"
     let lispProg2 = "(+ 1 (* 4 5))"
-    let lispProg3 = "(* 29 (- 4 5))"
+    let lispProg3 = "(* 2 (- 4 (+ 5 6 1)))"
     let tokenList = lexString lispProg3
     let ast = parseTokenList tokenList
     let eval = evalAst ast env
